@@ -7,8 +7,11 @@ const router = express.Router();
 
 const productController = require("../controllers/product");
 
-// ON GET method retrieves all products // all logged-in users
+// ON GET retrieves all products // all logged-in users
 router.get("/", productController.getProducts);
+
+// ON GET retrieves an single product
+router.get("/:productId", productController.getProduct);
 
 // ON POST method creates a new product // only admin
 router.post(

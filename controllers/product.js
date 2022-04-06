@@ -19,7 +19,25 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
-// get single product
+exports.getProduct = async (req, res, next) => {
+  const productId = req.params.productId;
+  try {
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      const error = new Error();
+      error.statusCode = 404;
+      error.data = "Product not found.";
+      throw error;
+    }
+    res.status(200).json({ product });
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 500;
+      error.data = "internal error";
+    }
+    res.status(error.statusCode).json({ error: error });
+  }
+};
 
 exports.postAddProduct = async (req, res, next) => {
   const { title, price } = req.body;

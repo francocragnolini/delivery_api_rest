@@ -4,13 +4,13 @@ const { authValidation } = require("../middleware/auth");
 
 const cartController = require("../controllers/cart");
 
-// ON GET method fetches the cart products
+// ON GET retrieves the user's cart //
 router.get("/:userId", authValidation, cartController.getCart);
 
-// ON POST method adds a existing product to the cart
+// ON POST adds an existing product to the user's cart
 router.post("/add", authValidation, cartController.postCart);
 
+// ON DELETE  deletes a product from the users's cart
 router.delete("/delete/:productId", authValidation, cartController.deleteItem);
-// router.get("/all", authValidation, cartController.get_all_carts);
 
 module.exports = router;

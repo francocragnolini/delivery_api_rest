@@ -25,10 +25,10 @@ const productRoutes = require("./routes/product");
 const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/order");
 
-app.use("/auth", authRoutes);
-app.use("/products", productRoutes);
-app.use("/cart", cartRoutes);
-app.use("/order", orderRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/products", productRoutes);
+app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/orders", orderRoutes);
 
 app.listen(port, () => {
   console.log(`App running successfully on port:${port}`);

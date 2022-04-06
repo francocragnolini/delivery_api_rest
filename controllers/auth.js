@@ -1,15 +1,22 @@
 const User = require("../models/User");
+const { validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { jwtSecret } = require("../config/config");
 
 // ON PUT method
 exports.signup = async (req, res, next) => {
-  //1- validate the body data
   const { username, fullname, email, password, phone, address } = req.body;
 
-  // check if user already exists.
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Validation failed.");
+      error.statusCode = 422;
+      error.data = errors.array()[0].msg;
+      throw error;
+    }
+    // check if user already exists.
     const user = await User.findOne({ where: { username: username } });
     if (user) {
       const error = new Error("User already exists.Try another one.");
@@ -28,22 +35,31 @@ exports.signup = async (req, res, next) => {
       address: address,
       phone: phone,
     });
+
     // generating a cart
     const cart = await newUser.createCart();
-    return res.status(201).json({ message: "User has been created!!" });
+    return res.status(201).json({ message: "User has been created." });
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
     }
-    next(error);
+    // next(error);
+    res.status(error.statusCode).json({ error: error });
   }
 };
 
 // ON POST method
 exports.login = async (req, res, next) => {
-  //1- validate body
-  const { email, password } = req.body;
   try {
+    // validates the incoming data
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Validation failed");
+      error.statusCode = 422;
+      error.data = errors.array()[0].msg;
+      throw error;
+    }
+    const { email, password } = req.body;
     const user = await User.findOne({ where: { email: email } });
     if (!user) {
       const error = new Error("A user with this email cannot be found");
@@ -55,13 +71,14 @@ exports.login = async (req, res, next) => {
     const isEqual = await bcrypt.compare(password, user.password);
 
     // jwt token
-    // 3- use ENV file to keep the away the secret key
     if (!isEqual) {
-      const error = new Error("Wrong Password");
-      error.statusCode = 401;
+      // const error = new Error("Wrong Password");
+      const error = new Error();
+      error.statusCode = 409;
+      error.data = "Wrong password";
       throw error;
     }
-    // SHOULD ADD USER COMPLETE WITHOUT PASSWORD AND IS ADMIN PROPERTY
+    // SHOULD ADD USER INFO WITHOUT PASSWORD AND IS ADMIN PROPERTY
 
     const token = jwt.sign(
       {
@@ -77,6 +94,7 @@ exports.login = async (req, res, next) => {
       error.statusCode = 500;
     }
     console.log(error);
-    next(error);
+    // next(error);
+    res.json({ error: error });
   }
 };

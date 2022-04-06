@@ -1,11 +1,13 @@
 const Product = require("../models/Product");
+const { validationResult } = require("express-validator");
 
 exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.findAll();
     if (products.length === 0) {
-      const error = new Error("No products were found.");
+      const error = new Error();
       error.statusCode = 404;
+      error.data = "Products were not found.";
       throw error;
     }
     res.status(200).json(products);
@@ -13,32 +15,32 @@ exports.getProducts = async (req, res, next) => {
     if (!error.statusCode) {
       error.statusCode = 500;
     }
-    console.log(error);
-    next(error);
+    res.status(error.statusCode).json({ error: error });
   }
 };
 
 // get single product
 
 exports.postAddProduct = async (req, res, next) => {
-  // validate payload(body)
   const { title, price } = req.body;
   try {
-    const product = await Product.findOne({ where: { title: title } });
-    if (product) {
-      const error = new Error("Product already exists in the DB");
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Validation failed.");
       error.statusCode = 409;
+      error.data = errors.array()[0].msg;
       throw error;
     }
     const newProduct = await Product.create({ title: title, price: price });
 
-    res.status(201).json({ message: "Product Created!", newProduct });
+    res
+      .status(201)
+      .json({ message: "Product has been created.", product: newProduct });
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
     }
-    console.log(error);
-    next(error);
+    res.status(error.statusCode).json({ error: error });
   }
 };
 
@@ -49,45 +51,50 @@ exports.updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findByPk(idParam);
     if (!product) {
-      const error = new Error("Could not find product.");
+      const error = new Error();
       error.statusCode = 404;
+      error.data = "Product could not be found.";
       throw error;
     }
-    product.title = title;
-    product.price = price;
-    await product.save();
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Validation failed.");
+      error.statusCode = 409;
+      error.data = errors.array()[0].msg;
+      throw error;
+    }
+
+    const updateProduct = await product.update({ title: title, price: price });
+
     return res
       .status(201)
-      .json({ message: "product updated", product: product });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
+      .json({ message: "product updated", product: updateProduct });
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 500;
     }
-    next(err);
+    res.status(error.statusCode).json({ error: error });
   }
 };
 
-exports.deleteProduct = (req, res, next) => {
+exports.deleteProduct = async (req, res, next) => {
   const productId = req.params.productId;
-  Product.findByPk(productId)
-    .then((product) => {
-      if (!product) {
-        const error = new Error("Could not find product.");
-        error.statusCode = 404;
-        throw error;
-      }
-      // Check logged in user
-      return Product.destroy({ where: { id: productId } });
-    })
-    .then((result) => {
-      console.log(result);
-      res.status(200).json({ message: "Deleted product." });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      console.log(err);
-      next(err);
-    });
+  console.log(req.params);
+  try {
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      const error = new Error();
+      error.statusCode = 404;
+      error.data = "Product could not be found";
+      throw error;
+    }
+
+    await product.destroy();
+    res.status(200).json({ message: "Deleted product." });
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 500;
+    }
+    res.status(error.statusCode).json({ error: error });
+  }
 };

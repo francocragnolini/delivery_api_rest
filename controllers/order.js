@@ -1,6 +1,11 @@
 const User = require("../models/User");
+const Order = require("../models/Order");
 
-// ON POST method: a logged in user can generate an order
+// ON GET : retrieves all orders
+// if admin retrieves all else only user's orders
+exports.getAllOrders = (req, res, next) => {};
+
+// ON POST  a logged-in user can generate an order
 exports.createOrder = async (req, res, next) => {
   const userId = req.userId;
   try {

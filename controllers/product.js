@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const { validationResult } = require("express-validator");
 
+// ON GET retrieves an array of products
 exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.findAll();
@@ -19,6 +20,7 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
+// ON GET retrieves a single product
 exports.getProduct = async (req, res, next) => {
   const productId = req.params.productId;
   try {
@@ -29,7 +31,7 @@ exports.getProduct = async (req, res, next) => {
       error.data = "Product not found.";
       throw error;
     }
-    res.status(200).json({ product });
+    res.status(200).json(product);
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
@@ -39,6 +41,7 @@ exports.getProduct = async (req, res, next) => {
   }
 };
 
+// ON POST creates a new product
 exports.postAddProduct = async (req, res, next) => {
   const { title, price } = req.body;
   try {
@@ -62,6 +65,7 @@ exports.postAddProduct = async (req, res, next) => {
   }
 };
 
+// ON UPDATE updates an existing product
 exports.updateProduct = async (req, res, next) => {
   //validates the incoming data(body)
   const idParam = req.params.productId;
@@ -86,7 +90,7 @@ exports.updateProduct = async (req, res, next) => {
 
     return res
       .status(201)
-      .json({ message: "product updated", product: updateProduct });
+      .json({ message: "product updated.", product: updateProduct });
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
@@ -95,6 +99,7 @@ exports.updateProduct = async (req, res, next) => {
   }
 };
 
+// ON DELETE deletes an existing product
 exports.deleteProduct = async (req, res, next) => {
   const productId = req.params.productId;
   console.log(req.params);
@@ -103,12 +108,12 @@ exports.deleteProduct = async (req, res, next) => {
     if (!product) {
       const error = new Error();
       error.statusCode = 404;
-      error.data = "Product could not be found";
+      error.data = "Product could not be found.";
       throw error;
     }
 
     await product.destroy();
-    res.status(200).json({ message: "Deleted product." });
+    res.status(200).json({ message: "Product was successfully deleted" });
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;

@@ -1,9 +1,42 @@
 const User = require("../models/User");
 const Order = require("../models/Order");
+const Status = require("../models/Status");
+const Payment = require("../models/Payment");
 
 // ON GET : retrieves all orders
 // if admin retrieves all else only user's orders
-exports.getAllOrders = (req, res, next) => {};
+exports.getAllOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ["fullname", "address"],
+        },
+        {
+          model: Payment,
+          attributes: ["name"],
+        },
+        {
+          model: Status,
+          attributes: ["name"],
+        },
+      ],
+    });
+    if (orders.length === 0) {
+      const error = new Error();
+      error.statusCode = 404;
+      error.data = "No Orders were found.";
+    }
+
+    res.status(200).json(orders);
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 500;
+    }
+    res.status(error.statusCode).json({ error: error });
+  }
+};
 
 // ON POST  a logged-in user can generate an order
 exports.createOrder = async (req, res, next) => {

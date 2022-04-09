@@ -1,7 +1,9 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
+const Cart = require("../models/Cart");
+const CartItem = require("../models/cart-item");
 
-//ON POST add a product to cart
+// ON POST add a product to cart
 exports.postCart = async (req, res, next) => {
   const { prodId, quantity } = req.body;
   const userId = req.userId;
@@ -19,8 +21,9 @@ exports.postCart = async (req, res, next) => {
       // find product in db
       product = await Product.findByPk(prodId);
       if (!product) {
-        const error = new Error("Product not found.");
+        const error = new Error();
         error.statusCode = 404;
+        error.data = "Product not found.";
         throw error;
       }
       const oldTotal = cart.total;
@@ -45,24 +48,22 @@ exports.postCart = async (req, res, next) => {
 
     // updates the total price of cart
     await cart.update({ total: updatedQuantity * price });
-    console.log(cart);
 
     res.status(201).json({ message: "Product added to cart" });
   } catch (error) {
-    console.log(error);
-    next(error);
+    res.status(error.statusCode).json({ error: error });
   }
 };
 
-// ON delete method: deletes a product from the cart
+// TESTING
 exports.deleteItem = async (req, res, next) => {
   const productId = req.params.productId;
   const userId = req.userId;
+  const quantity = req.body.quantity;
 
   try {
     // getting the user cart
     const user = await User.findByPk(userId);
-
     const cart = await user.getCart();
 
     // returns an array with a single element
@@ -72,41 +73,60 @@ exports.deleteItem = async (req, res, next) => {
       },
     });
 
-    // getting the item
-    const product = products[0];
-
-    if (!product) {
-      const error = new Error("Product not found in cart.");
+    // product not found
+    if (products.length === 0) {
+      const error = new Error();
       error.statusCode = 404;
+      error.data = "Product could not be found.";
       throw error;
     }
 
-    await product.CartItem.destroy();
+    // extracts product from array
+    const product = products[0];
+    const total = cart.total;
+    const price = product.price;
+    const oldQuantity = product.CartItem.quantity;
+    const newQuantity = oldQuantity - quantity;
+
+    // deletes product from cart
+    if (newQuantity <= 0) {
+      await product.CartItem.destroy();
+      await cart.update({ total: total - oldQuantity * price });
+    }
+
+    // updates the product quantity
 
     return res.status(202).json({ message: "Product deleted." });
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
     }
-    next(error);
+    res.status(error.statusCode).json({ error: error });
   }
 };
+// TESTING
 
-// ON GET method to fetch a single cart
+// ON GET returns the user's cart
 exports.getCart = async (req, res, next) => {
   const userId = req.params.userId;
   try {
-    const user = await User.findByPk(userId);
-    const cart = await user.getCart();
+    const cart = await Cart.findOne({
+      include: { model: Product },
+      where: { UserId: userId },
+    });
+
     if (!cart) {
-      const error = new Error("Cannot fetched cart");
+      const error = new Error();
+      error.statusCode = 404;
+      error.data = "Cart not found.";
       throw error;
     }
-    const products = await cart.getProducts();
 
-    res.json({ cart: products });
+    res.json(cart);
   } catch (error) {
-    console.log(error);
-    next(error);
+    if (!error.statusCode) {
+      error.statusCode = 500;
+    }
+    res.status(error.statusCode).json({ error: error });
   }
 };

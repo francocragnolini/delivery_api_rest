@@ -1,5 +1,6 @@
 const express = require("express");
 const sequelize = require("./database/database");
+// const seed = require("./seed");
 const association = require("./database/associations");
 const { port } = require("./config/config");
 

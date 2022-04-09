@@ -42,9 +42,8 @@ orderModel.belongsTo(statusModel);
 
 // SYNC TABLES
 sequelize
-  // .sync({ force: true })
-  .sync()
+  .sync({ force: false })
   .then((result) => {
     console.log("synchronizing the tables");
   })
-  .catch((err) => console.log(error));
+  .catch((error) => console.log(error));

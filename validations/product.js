@@ -19,10 +19,6 @@ const createProductValidation = [
   body("price")
     .notEmpty()
     .withMessage("Price field cannot be empty. Please fill it up.")
-    .not()
-    .isNumeric()
-    .withMessage("Price field must be a number.")
-    .withMessage("Must be a number.")
     .trim(),
 ];
 
